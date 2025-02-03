@@ -1,0 +1,32 @@
+import:
+    com.gmail.nossr50.api.ExperienceAPI
+
+every 20 seconds: # Runs every 20 seconds (testing mode)
+    loop all players:
+        set {_powerlevel} to ExperienceAPI.getPowerLevel(loop-player)
+
+        # Calculate bonus hearts (1 per 100 power levels, capped at 20 bonus hearts)
+        set {_bonus_hearts} to floor({_powerlevel} / 100)
+        if {_bonus_hearts} > 20:
+            set {_bonus_hearts} to 20  # Cap at 20 Bonus Hearts (40 extra HP)
+
+        # Desired max health (Base 10 hearts + Bonus)
+        set {_new_health} to 20 + ({_bonus_hearts} * 2)
+
+        # Get the player's currently stored max health
+        set {_last_health} to {max_health::%loop-player%} 
+
+        # If their stored health isn't set, set it to their current health
+        if {_last_health} is not set:
+            set {_last_health} to loop-player's max health
+            set {max_health::%loop-player%} to {_last_health} # Store it
+
+        # Only update if the new health is different from their last applied health
+        if {_new_health} is not {_last_health}:
+            execute console command "attribute %loop-player% minecraft:max_health base set %{_new_health}%"
+            
+            # Store the new max health so it doesn't repeat
+            set {max_health::%loop-player%} to {_new_health}
+
+            # Send a chat message notifying the player
+            send "&a[MCMMO] &7Your power level is now &b%{_powerlevel}%&7! You gained &c+%{_bonus_hearts}% extra hearts!" to loop-player
